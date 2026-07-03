@@ -5,7 +5,7 @@
 ![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-4.x-green?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Stable-success?style=for-the-badge)
 
-**Scrapic** no es un simple script, es un **Framework de Scraping** diseñado específicamente para la recolección masiva de datos en investigaciones de OSINT, análisis de datasets y creación de corpus para entrenar modelos de Machine Learning (ML).
+**Scrapic** es un **Framework de Scraping** diseñado específicamente para la recolección masiva de datos en investigaciones de OSINT, análisis de datasets y creación de corpus para entrenar modelos de Machine Learning (ML).
 
 A diferencia de un scraper tradicional, su arquitectura modular está diseñada para ser ultra-resiliente: evade bloqueos dinámicamente, rastrea dominios de forma recursiva (Spider) y realiza validaciones inteligentes en memoria para descartar archivos "basura" antes de guardarlos.
 
