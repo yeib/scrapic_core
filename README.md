@@ -104,3 +104,15 @@ Esta herramienta está desarrollada **estrictamente con fines educativos y de in
 - **El autor no se hace responsable** del mal uso de esta herramienta, recolección de datos privados expuestos por error de terceros, ni de la infracción de leyes de propiedad intelectual. Úsalo bajo tu propia responsabilidad.
 
 *Desarrollado con pasión como demostración de ingeniería de software, arquitectura limpia y automatización de redes.*
+
+---
+
+## ✒️ Autor
+
+**Scrapic** fue creado por **Yeib**. 
+Puedes encontrarme o ponerte en contacto conmigo aquí:
+
+- 📧 Email: [yeib@pm.me](mailto:yeib@pm.me)
+- 🌐 Web: [yeib.cl](https://yeib.cl)
+
+*Si usas esta herramienta para algo increíble, ¡me encantaría saberlo!*
