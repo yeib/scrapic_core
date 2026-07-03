@@ -136,7 +136,7 @@ if start_btn:
                     st.info("💡 Sugerencia: Intenta bajar el tamaño mínimo (MB), usar menos páginas o probar un término más genérico.")
                     
             base_folder = "audio" if file_ext == '.mp3' else "documentos"
-            status_text.success(f"🎉 ¡Misión completada! Revisar carpeta 'downloads/{base_folder}'.")
+            status_text.success(f"🎉 ¡Misión completada! Revisa tu carpeta 'downloads/{base_folder}'.")
             st.balloons()
 
     elif modo == "🕸️ Spider Crawler":
@@ -151,5 +151,5 @@ if start_btn:
             spider.crawl_and_download(start_url, target_extensions=exts, max_depth=max_depth, max_files=limit)
             
             progress_bar.progress(1.0)
-            status_text.success("🎉 ¡Spider terminó de mapear y descargar! Revisar carpeta 'downloads/spider'.")
+            status_text.success("🎉 ¡Spider terminó de mapear y descargar! Revisa tu carpeta 'downloads/spider'.")
             st.balloons()
