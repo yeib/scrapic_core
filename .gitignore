@@ -1,0 +1,18 @@
+downloads/
+downloads_docs/
+downloads_spider/
+scrapic_history.json
+scrapic_history.json.tmp
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Archivos temporales de debug y testing (no para el repo público)
+test_*.py
+*.html
