@@ -4,23 +4,20 @@
 
 Aquí tienes la ruta de trabajo sugerida para el futuro, apuntando a una **v2.0** que rompa todos los esquemas (ideal para coincidir con tu próximo diploma 🎓):
 
-### 1. Distribución Global (Nivel Maestro 🌍) - *[Pendiente para el próximo Diploma]*
-- **Publicación en PyPI (`pip install scrapic`):** Empaquetar el proyecto y publicarlo en el repositorio oficial de Python para que cualquiera en el mundo pueda instalarlo con un solo comando.
+### 1. Renderizado de JavaScript (SPA 🌐)
+- **Integración con Playwright:** Actualmente usamos `requests` y `cloudscraper`, lo cual es rapidísimo pero falla si la página está hecha en React o Angular y requiere ejecutar JavaScript para cargar los links. Sumar un "Modo Playwright" (Headless Browser) nos hará invencibles contra sitios web modernos.
 
-### 2. Scraping Semántico (Integración con IA 🧠)
-- **Extracción con LLMs:** En lugar de solo bajar archivos, hacer que Scrapic lea el texto de las páginas o PDFs y use la API de un modelo de lenguaje (como OpenAI o Gemini) para extraer datos estructurados (ej: resumir el dictamen o extraer nombres clave) automáticamente.
+### 2. Base de Datos Local y Búsqueda (SQLite 🗄️)
+- **Migrar de CSV a SQL:** A medida que bajes miles de archivos, un CSV se vuelve lento de consultar. Podríamos hacer que Scrapic guarde toda la metadata y el historial en una base de datos local SQLite, permitiéndote hacer búsquedas complejas (ej: "muéstrame todos los PDFs de más de 5MB descargados ayer").
 
-### 3. Renderizado de JavaScript (SPA 🌐)
-- **Integración con Playwright:** Actualmente usamos `requests` y `cloudscraper`, lo cual es rapidísimo pero falla si la página está hecha en React o Angular y requiere ejecutar JavaScript para cargar los links. Sumar un "Modo Playwright" (Headless Browser) nos haría invencibles.
+### 3. Web Dashboard Pro (Streamlit Avanzado 🎨)
+- **Centro de Comando Web:** Ya tenemos una base gráfica en `src/web/`. Podríamos mejorarla para incluir gráficos en tiempo real de las descargas y la capacidad de iniciar y monitorear las misiones (Araña, Dataset, Imágenes) haciendo clics directamente desde el navegador, sin necesidad de la consola.
 
-### 4. Base de Datos Local y Búsqueda (SQLite 🗄️)
-- **Migrar de CSV a SQL:** A medida que bajes miles de archivos, un CSV se vuelve lento. Podríamos hacer que Scrapic guarde toda la metadata y el historial en una base de datos local SQLite, permitiéndote hacer consultas complejas (ej: "muéstrame todos los PDFs de más de 5MB descargados ayer").
+### 4. Tareas Programadas (Cronjobs ⏰)
+- **Modo Vigía:** Añadir una función para que Scrapic se quede "durmiendo" y se despierte automáticamente (ej: todos los días a las 3 AM) para escanear un sitio y bajar solo los archivos nuevos que no estaban ayer. Automatización total.
 
-### 5. Web Dashboard Pro (Streamlit Avanzado 🎨)
-- **Centro de Comando Web:** Ya tenemos una base en `src/web/`. Podríamos mejorarla para incluir gráficos en tiempo real de las descargas, una galería visual integrada y la capacidad de iniciar las misiones con botones directamente desde el navegador (sin usar la consola).
-
-### 6. Tareas Programadas (Cronjobs ⏰)
-- **Modo Vigía:** Añadir una función para que Scrapic se quede "durmiendo" y se despierte automáticamente (ej: todos los días a las 3 AM) para escanear un sitio y bajar solo los archivos nuevos que no estaban ayer.
+### 5. Distribución Global (Nivel Maestro 🌍) - *[Pendiente para el próximo Diploma]*
+- **Publicación en PyPI (`pip install scrapic`):** Empaquetar el proyecto y publicarlo en el repositorio oficial de Python para que cualquiera en el mundo pueda instalar tu herramienta con un solo comando. El broche de oro.
 
 ---
 *Esta hoja de ruta está viva. ¡Iremos tachando y agregando cosas según los retos que nos ponga la web!*
