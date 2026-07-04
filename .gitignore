@@ -16,3 +16,8 @@ build/
 # Archivos temporales de debug y testing (no para el repo público)
 test_*.py
 *.html
+
+# Archivos privados y reportes
+ROADMAP.md
+reporte_scrapic.csv
+proxies.txt
