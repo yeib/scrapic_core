@@ -155,7 +155,10 @@ def main():
             exts_input = Prompt.ask("[bold yellow]¿Qué extensiones extraer? (ej: .pdf, .csv, .mp3, .zip)[/bold yellow]", default=".pdf,.csv")
             target_exts = [e.strip() if e.strip().startswith('.') else f".{e.strip()}" for e in exts_input.split(",")]
             
-            max_depth = IntPrompt.ask("[bold yellow]¿Profundidad máxima de clicks?[/bold yellow]", default=2)
+            max_depth = IntPrompt.ask("[bold yellow]¿Profundidad máxima de clicks? (Sugerido: 1 o 2)[/bold yellow]", default=2)
+            if max_depth >= 4:
+                console.print("[bold red]⚠ ADVERTENCIA: Una profundidad de 4 o más rastreará exponencialmente millones de enlaces y puede tardar horas.[/bold red]")
+                
             max_files = IntPrompt.ask("[bold yellow]¿Límite de archivos a extraer?[/bold yellow]", default=20)
             
             regex_input = Prompt.ask("[bold yellow]¿Filtrar por patrón Regex? (ej: reporte_.*)[/bold yellow] (deja en blanco para ignorar)", default="")
