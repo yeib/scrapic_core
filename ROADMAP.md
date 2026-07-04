@@ -1,28 +1,26 @@
 # 🗺️ Hoja de Ruta: Scrapic (Próximos Pasos)
 
-¡El lanzamiento de la **v1.0.1** fue un éxito! Ya tenemos una base sólida, pero como todo buen framework de OSINT, siempre hay espacio para hacerlo más sigiloso, rápido y letal. 
+¡El lanzamiento de la **v1.1** ha sido un éxito rotundo! Implementamos reportes OSINT, araña asíncrona con regex y evasión anti-bot. 
 
-Aquí tienes la ruta de trabajo sugerida para el futuro, dividida por áreas clave:
+Aquí tienes la ruta de trabajo sugerida para el futuro, apuntando a una **v2.0** que rompa todos los esquemas (ideal para coincidir con tu próximo diploma 🎓):
 
-### 1. Motor Anti-Bot y Redes (Nivel Ninja 🥷)
-- **Rotación de Proxies Dinámica:** Actualmente el soporte SOCKS5 funciona, pero podríamos agregar un modo donde Scrapic lea una lista de proxies (`proxies.txt`) y salte de IP en cada petición automáticamente.
-- **Bypass Avanzado:** Integrar `cloudscraper` o `undetected-chromedriver` para evadir los molestos desafíos de Cloudflare que bloquean algunas páginas en el modo *Spider*.
+### 1. Distribución Global (Nivel Maestro 🌍) - *[Pendiente para el próximo Diploma]*
+- **Publicación en PyPI (`pip install scrapic`):** Empaquetar el proyecto y publicarlo en el repositorio oficial de Python para que cualquiera en el mundo pueda instalarlo con un solo comando.
 
-### 2. Spider Crawler (El Ninja Veloz 🕷️)
-- **Mapeo Concurrente:** La fase de descarga ya es multi-hilo, pero la *Fase 1 (Mapeo BFS)* es lineal. Si la hacemos asíncrona, el Spider podría escanear cientos de páginas en un par de segundos.
-- **Filtros Inteligentes:** Añadir soporte para expresiones regulares (Regex). Por ejemplo, decirle a la araña: *"Baja solo los PDFs que contengan la palabra 'contrato' en el link"*.
+### 2. Scraping Semántico (Integración con IA 🧠)
+- **Extracción con LLMs:** En lugar de solo bajar archivos, hacer que Scrapic lea el texto de las páginas o PDFs y use la API de un modelo de lenguaje (como OpenAI o Gemini) para extraer datos estructurados (ej: resumir el dictamen o extraer nombres clave) automáticamente.
 
-### 3. Media Ripper & Dataset Builder 🎧📊
-- **Descarga de Playlists completas:** Mejorar el módulo de YouTube/Audio para que acepte links de playlists y baje discos enteros de una vez.
-- **Múltiples Motores de Búsqueda:** El dorking usa Yahoo ahora mismo. Podríamos añadir DuckDuckGo o Bing como opciones seleccionables desde la interfaz, por si Yahoo nos bloquea por exceso de consultas.
+### 3. Renderizado de JavaScript (SPA 🌐)
+- **Integración con Playwright:** Actualmente usamos `requests` y `cloudscraper`, lo cual es rapidísimo pero falla si la página está hecha en React o Angular y requiere ejecutar JavaScript para cargar los links. Sumar un "Modo Playwright" (Headless Browser) nos haría invencibles.
 
-### 4. Interfaz y Experiencia (Streamlit UI 🎨)
-- **Galería Integrada:** Una nueva pestaña en la aplicación web para poder previsualizar las fotos, escuchar los audios o leer los PDFs descargados sin tener que salir de la UI web.
-- **Reportes OSINT:** Un botón de "Exportar Reporte". Que Scrapic genere un archivo `.csv` automático con la procedencia de cada archivo bajado (URL original, tamaño, fecha de captura), lo cual es oro puro para los analistas de datos.
+### 4. Base de Datos Local y Búsqueda (SQLite 🗄️)
+- **Migrar de CSV a SQL:** A medida que bajes miles de archivos, un CSV se vuelve lento. Podríamos hacer que Scrapic guarde toda la metadata y el historial en una base de datos local SQLite, permitiéndote hacer consultas complejas (ej: "muéstrame todos los PDFs de más de 5MB descargados ayer").
 
-### 5. Distribución Global (Nivel Maestro 🌍)
-- **Publicación en PyPI (`pip install scrapic`):** Estructurar el código fuente para que se pueda empaquetar y publicar en el repositorio oficial de Python. Así, cualquier persona del mundo podrá instalar y correr Scrapic desde su terminal con un solo comando, e integraremos *GitHub Actions* para que esto suceda automáticamente en cada Release.
+### 5. Web Dashboard Pro (Streamlit Avanzado 🎨)
+- **Centro de Comando Web:** Ya tenemos una base en `src/web/`. Podríamos mejorarla para incluir gráficos en tiempo real de las descargas, una galería visual integrada y la capacidad de iniciar las misiones con botones directamente desde el navegador (sin usar la consola).
+
+### 6. Tareas Programadas (Cronjobs ⏰)
+- **Modo Vigía:** Añadir una función para que Scrapic se quede "durmiendo" y se despierte automáticamente (ej: todos los días a las 3 AM) para escanear un sitio y bajar solo los archivos nuevos que no estaban ayer.
 
 ---
-**💡 Recomendación para cuando quieras retomar:**
-Podemos empezar por los **Reportes OSINT (.csv)** o la **Publicación en PyPI**, ya que son las características que más valor comercial le darían a un Framework de este estilo. ¡Guárdalo en tus notas para cuando volvamos a la carga!
+*Esta hoja de ruta está viva. ¡Iremos tachando y agregando cosas según los retos que nos ponga la web!*
