@@ -11,6 +11,15 @@ from src.core.spider import SpiderScraper
 
 st.set_page_config(page_title="Scrapic", page_icon="🤖", layout="wide")
 
+st.markdown("""
+    <style>
+        .stDeployButton {display:none;}
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("🤖 Scrapic - Ninja Harvester")
 st.markdown("Herramienta multipropósito para recolección de datos masiva desde fuentes abiertas.")
 
