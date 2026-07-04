@@ -158,6 +158,9 @@ def main():
             max_depth = IntPrompt.ask("[bold yellow]¿Profundidad máxima de clicks?[/bold yellow]", default=2)
             max_files = IntPrompt.ask("[bold yellow]¿Límite de archivos a extraer?[/bold yellow]", default=20)
             
+            regex_input = Prompt.ask("[bold yellow]¿Filtrar por patrón Regex? (ej: reporte_.*)[/bold yellow] (deja en blanco para ignorar)", default="")
+            regex_pattern = regex_input.strip() if regex_input.strip() else None
+            
             console.print(f"\n[bold green]🚀 Soltando la Araña en {start_url}...[/bold green]\n")
             
             spider = SpiderScraper()
@@ -168,7 +171,8 @@ def main():
                     start_url, 
                     target_extensions=target_exts, 
                     max_depth=max_depth, 
-                    max_files=max_files
+                    max_files=max_files,
+                    regex_pattern=regex_pattern
                 )
                 progress.update(task_id, description="[green]✓ Rastreo finalizado.[/green]")
                 

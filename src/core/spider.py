@@ -1,6 +1,8 @@
 import os
+import re
 import urllib.parse
 import logging
+import concurrent.futures
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -9,6 +11,7 @@ from typing import List, Tuple
 from src.core.network import NetworkManager
 from src.core.utils import FileUtils
 from src.core.history import HistoryManager
+from src.core.report import OSINTReporter
 
 logger = logging.getLogger("scrapic")
 
@@ -19,6 +22,7 @@ class SpiderScraper:
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
         self.history = HistoryManager()
+        self.reporter = OSINTReporter()
 
     def _get_links(self, url: str, base_domain: str, target_extensions: List[str]) -> Tuple[List[str], List[str]]:
         """Retorna (páginas_internas, archivos_objetivo)"""
@@ -46,7 +50,7 @@ class SpiderScraper:
                     
         return pages, files
 
-    def crawl_and_download(self, start_url: str, target_extensions: List[str] = ['.pdf'], max_depth: int = 2, max_files: int = 20):
+    def crawl_and_download(self, start_url: str, target_extensions: List[str] = ['.pdf'], max_depth: int = 2, max_files: int = 20, regex_pattern: str = None):
         """
         Realiza un mapeo y extracción completa de un sitio web.
         
@@ -55,9 +59,10 @@ class SpiderScraper:
             target_extensions (List[str]): Lista de extensiones a atrapar (ej: ['.pdf', '.csv']).
             max_depth (int): Profundidad máxima de clicks desde la URL original.
             max_files (int): Límite total de archivos a descargar.
+            regex_pattern (str): Patrón Regex opcional para filtrar los archivos (ej: 'reporte_202[0-4]').
             
         El proceso se divide en dos fases:
-        Fase 1: Escaneo en anchura (BFS) para mapear todos los links internos sin descargar nada.
+        Fase 1: Escaneo en anchura (BFS) asíncrono para mapear todos los links internos rápidamente.
         Fase 2: Descarga masiva y concurrente usando ThreadPoolExecutor para mayor velocidad.
         """
         logger.info(f"🕸️ Iniciando Spider en: {start_url} (Profundidad Máxima: {max_depth})")
@@ -68,32 +73,49 @@ class SpiderScraper:
         if not os.path.exists(domain_dir):
             os.makedirs(domain_dir)
 
+        # Fase 1: Rastreo Recursivo (BFS Concurrente por niveles)
+        logger.info("Fase 1: Mapeo recursivo asíncrono del sitio web...")
+        
+        compiled_regex = re.compile(regex_pattern, re.IGNORECASE) if regex_pattern else None
+        
         visited_pages = set()
-        queue = [(start_url, 0)]
+        current_level_urls = {start_url}
         found_files = set()
 
-        # Fase 1: Rastreo Recursivo (BFS)
-        logger.info("Fase 1: Mapeo recursivo del sitio web...")
-        while queue:
-            current_url, depth = queue.pop(0)
-            if current_url in visited_pages or depth > max_depth:
-                continue
-            
-            logger.debug(f"Spider analizando: {current_url} (Profundidad {depth})")
-            visited_pages.add(current_url)
-            
-            new_pages, new_files = self._get_links(current_url, base_domain, target_extensions)
-            
-            for f in new_files:
-                if f not in found_files and not self.history.is_downloaded(f):
-                    found_files.add(f)
-                    
-            if len(found_files) >= max_files * 2: 
+        for depth in range(max_depth + 1):
+            if not current_level_urls or len(found_files) >= max_files * 2:
                 break
                 
-            for p in new_pages:
-                if p not in visited_pages:
-                    queue.append((p, depth + 1))
+            logger.info(f"Escaneando {len(current_level_urls)} páginas en profundidad {depth}...")
+            next_level_urls = set()
+            
+            def scan_url(url):
+                return self._get_links(url, base_domain, target_extensions)
+
+            with ThreadPoolExecutor(max_workers=15) as executor:
+                future_to_url = {executor.submit(scan_url, url): url for url in current_level_urls}
+                
+                for future in concurrent.futures.as_completed(future_to_url):
+                    url = future_to_url[future]
+                    try:
+                        new_pages, new_files = future.result()
+                        
+                        for f in new_files:
+                            if compiled_regex and not compiled_regex.search(f):
+                                continue # El link no cumple el filtro Regex
+                                
+                            if f not in found_files and not self.history.is_downloaded(f):
+                                found_files.add(f)
+                                
+                        for p in new_pages:
+                            if p not in visited_pages and p not in current_level_urls:
+                                next_level_urls.add(p)
+                                
+                    except Exception as e:
+                        logger.debug(f"Error escaneando url {url}: {e}")
+                        
+            visited_pages.update(current_level_urls)
+            current_level_urls = next_level_urls
 
         if not found_files:
             logger.warning(f"No se encontraron archivos {target_extensions} en {start_url}")
@@ -125,6 +147,7 @@ class SpiderScraper:
                     if len(successes) < max_files:
                         successes.append(url)
                         self.history.mark_as_downloaded(url)
+                        self.reporter.log_download(filepath, url, "Spider")
                         return True
                     else:
                         if os.path.exists(filepath): os.remove(filepath)

@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from src.core.history import HistoryManager
 from src.core.network import NetworkManager
 from src.core.utils import FileUtils
+from src.core.report import OSINTReporter
 
 logger = logging.getLogger("scrapic")
 
@@ -19,6 +20,7 @@ class DatasetScraper:
     """
     def __init__(self):
         self.history = HistoryManager()
+        self.reporter = OSINTReporter()
 
     def create_concept_dir(self, concept: str, file_ext: str) -> str:
         """Crea el directorio destino dependiendo del tipo de archivo."""
@@ -83,6 +85,7 @@ class DatasetScraper:
                 if len(successes) < limit:
                     successes.append(url)
                     self.history.mark_as_downloaded(url)
+                    self.reporter.log_download(filepath, url, f"Dataset ({file_ext})")
                     return True
                 else:
                     if os.path.exists(filepath): os.remove(filepath)
@@ -142,6 +145,12 @@ class DatasetScraper:
                         logger.debug(f"Ripper descargando: {entry.get('title', url)}")
                         ydl.download([url])
                         self.history.mark_as_downloaded(url)
+                        
+                        # Loggear en reporte
+                        title = entry.get('title', 'audio_desconocido')
+                        file_guess = os.path.join(concept_dir, f"{title}.mp3")
+                        self.reporter.log_download(file_guess, url, "Media Ripper")
+                        
                         successes += 1
                     except Exception as e:
                         logger.debug(f"Fallo extrayendo audio de {url}: {e}")
