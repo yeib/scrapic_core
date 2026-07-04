@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from icrawler.builtin import BingImageCrawler, BaiduImageCrawler
 from src.core.history import HistoryManager
 from src.core.network import NetworkManager
+from src.core.report import OSINTReporter
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -30,6 +31,7 @@ class MultiEngineScraper:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         }
         self.history = HistoryManager()
+        self.reporter = OSINTReporter()
 
     def create_concept_dir(self, concept: str) -> str:
         """Crea el directorio destino para las imágenes de un concepto."""
@@ -67,9 +69,11 @@ class MultiEngineScraper:
                         ext = "jpg"
                 
                 filename = f"{prefix}_{idx:06d}.{ext}"
-                with open(os.path.join(save_dir, filename), "wb") as f:
+                filepath = os.path.join(save_dir, filename)
+                with open(filepath, "wb") as f:
                     f.write(response.content)
                 self.history.mark_as_downloaded(url)
+                self.reporter.log_download(filepath, url, f"Image Scraper ({prefix})")
                 return True
         except Exception:
             pass
