@@ -16,3 +16,11 @@ build/
 # Archivos temporales de debug y output generado (no para el repo público)
 *.html
 reporte_scrapic.csv
+scrapic.db
+
+# Archivos privados
+ROADMAP.md
+proxies.txt
+
+# Scripts de testing/experimentos sueltos en la raíz
+test_*.py
