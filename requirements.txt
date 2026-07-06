@@ -4,7 +4,7 @@ beautifulsoup4>=4.11.0
 urllib3>=1.26.0
 rich>=13.0.0
 streamlit>=1.28.0
-PyPDF2
-yt-dlp
-PySocks
-cloudscraper
+PyPDF2>=3.0.0
+yt-dlp>=2023.10.13
+PySocks>=1.7.1
+cloudscraper>=1.2.71

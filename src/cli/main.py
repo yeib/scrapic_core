@@ -12,6 +12,7 @@ from rich.table import Table
 from src.core.image_scraper import MultiEngineScraper
 from src.core.dataset_scraper import DatasetScraper
 from src.core.spider import SpiderScraper
+from src.core.utils import setup_logging
 
 console = Console()
 
@@ -21,6 +22,7 @@ def main():
     Provee un menú en consola para iniciar misiones de scraping:
     Imágenes, Datasets/Audio y Rastreo Spider.
     """
+    setup_logging()
     while True:
         # Header principal dividido para respetar PEP8
         title = "[bold cyan]🤖 Scrapic - Ninja Harvester[/bold cyan]"

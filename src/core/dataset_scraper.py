@@ -25,10 +25,7 @@ class DatasetScraper:
     def create_concept_dir(self, concept: str, file_ext: str) -> str:
         """Crea el directorio destino dependiendo del tipo de archivo."""
         base = "downloads/audio" if file_ext == '.mp3' else "downloads/documentos"
-        concept_dir = os.path.join(base, concept.replace(" ", "_"))
-        if not os.path.exists(concept_dir):
-            os.makedirs(concept_dir)
-        return concept_dir
+        return FileUtils.make_concept_dir(base, concept)
 
     def _download_file(self, idx: int, url: str, save_dir: str, file_ext: str, min_size_mb: float, min_pages: int, successes: list, limit: int, lock: threading.Lock) -> bool:
         """
@@ -232,6 +229,7 @@ class DatasetScraper:
                     break
             
             logger.info(f"Proceso terminado. Se lograron descargar {len(successes)} archivos que cumplen los filtros.")
+            self.history.flush()
             return len(successes)
                     
         except Exception as e:
