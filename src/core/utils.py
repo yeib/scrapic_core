@@ -1,13 +1,31 @@
 import re
 import csv
 import json
+import os
 import logging
 
 logger = logging.getLogger("scrapic")
 
+
+def setup_logging(level: int = logging.INFO):
+    """Configura el logger global de Scrapic. Llamar una vez al inicio de la aplicación."""
+    log = logging.getLogger("scrapic")
+    if not log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s | %(name)s | %(message)s"))
+        log.addHandler(handler)
+    log.setLevel(level)
+
 class FileUtils:
-    """Utilidades para sanitizar nombres y validar la integridad interna de archivos descargados."""
+    """Utilidades para sanitizar nombres, crear directorios y validar la integridad interna de archivos descargados."""
     
+    @staticmethod
+    def make_concept_dir(base: str, concept: str) -> str:
+        """Crea y retorna el directorio destino para un concepto. Centraliza la lógica compartida entre scrapers."""
+        concept_dir = os.path.join(base, concept.replace(" ", "_"))
+        os.makedirs(concept_dir, exist_ok=True)
+        return concept_dir
+
     @staticmethod
     def clean_filename(filename: str) -> str:
         """Limpia la basura de la web: espacios, caracteres especiales, y codificación URL."""

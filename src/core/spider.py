@@ -50,6 +50,10 @@ class SpiderScraper:
                     
         return pages, files
 
+    def _scan_url(self, url: str, base_domain: str, target_extensions: List[str]) -> Tuple[List[str], List[str]]:
+        """Wrapper de _get_links para uso como callable en ThreadPoolExecutor."""
+        return self._get_links(url, base_domain, target_extensions)
+
     def crawl_and_download(self, start_url: str, target_extensions: List[str] = ['.pdf'], max_depth: int = 2, max_files: int = 20, regex_pattern: str = None):
         """
         Realiza un mapeo y extracción completa de un sitio web.
@@ -70,8 +74,7 @@ class SpiderScraper:
         base_domain = parsed_start.netloc
         
         domain_dir = os.path.join(self.base_dir, base_domain.replace(".", "_"))
-        if not os.path.exists(domain_dir):
-            os.makedirs(domain_dir)
+        os.makedirs(domain_dir, exist_ok=True)
 
         # Fase 1: Rastreo Recursivo (BFS Concurrente por niveles)
         logger.info("Fase 1: Mapeo recursivo asíncrono del sitio web...")
@@ -88,12 +91,9 @@ class SpiderScraper:
                 
             logger.info(f"Escaneando {len(current_level_urls)} páginas en profundidad {depth}...")
             next_level_urls = set()
-            
-            def scan_url(url):
-                return self._get_links(url, base_domain, target_extensions)
 
             with ThreadPoolExecutor(max_workers=15) as executor:
-                future_to_url = {executor.submit(scan_url, url): url for url in current_level_urls}
+                future_to_url = {executor.submit(self._scan_url, url, base_domain, target_extensions): url for url in current_level_urls}
                 
                 for future in concurrent.futures.as_completed(future_to_url):
                     url = future_to_url[future]
@@ -160,3 +160,5 @@ class SpiderScraper:
                 executor.submit(download_worker, i+1, file_url)
                 
         logger.info(f"🕸️ Spider finalizó: {len(successes)} archivos extraídos de {base_domain}.")
+        self.history.flush()
+

@@ -8,6 +8,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from src.core.image_scraper import MultiEngineScraper
 from src.core.dataset_scraper import DatasetScraper
 from src.core.spider import SpiderScraper
+from src.core.utils import setup_logging
+
+setup_logging()
 
 st.set_page_config(page_title="Scrapic", page_icon="🤖", layout="wide")
 

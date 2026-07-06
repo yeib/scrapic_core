@@ -8,10 +8,13 @@ logger = logging.getLogger("scrapic")
 class HistoryManager:
     """Gestiona el historial de descargas para evitar archivos repetidos.
     Thread-safe: protegido con lock para escrituras concurrentes desde ThreadPoolExecutor.
+    Optimizado: guarda a disco en batch cada `save_every` marcas, no en cada URL individual.
     """
-    def __init__(self, history_file: str = "scrapic_history.json"):
+    def __init__(self, history_file: str = "scrapic_history.json", save_every: int = 10):
         self.history_file = history_file
+        self.save_every = save_every
         self._lock = threading.Lock()
+        self._pending_saves = 0
         self.downloaded_urls = self._load_history()
 
     def _load_history(self) -> set:
@@ -43,7 +46,17 @@ class HistoryManager:
             return url in self.downloaded_urls
 
     def mark_as_downloaded(self, url: str):
-        """Marca una URL como descargada. Thread-safe con escritura atómica."""
+        """Marca una URL como descargada. Guarda a disco en batch para reducir I/O."""
         with self._lock:
             self.downloaded_urls.add(url)
-            self._save_history()
+            self._pending_saves += 1
+            if self._pending_saves >= self.save_every:
+                self._save_history()
+                self._pending_saves = 0
+
+    def flush(self):
+        """Fuerza el guardado inmediato del historial pendiente. Llamar al terminar una sesión."""
+        with self._lock:
+            if self._pending_saves > 0:
+                self._save_history()
+                self._pending_saves = 0

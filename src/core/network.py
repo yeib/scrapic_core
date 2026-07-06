@@ -3,6 +3,7 @@ import time
 import requests
 import os
 import logging
+import threading
 from typing import Optional
 
 logger = logging.getLogger("scrapic")
@@ -26,6 +27,7 @@ class NetworkManager:
     
     _proxies_list = []
     _proxies_loaded = False
+    _thread_local = threading.local()  # Sesión de cloudscraper reutilizable por hilo
     
     @classmethod
     def _load_proxies(cls):
@@ -52,6 +54,13 @@ class NetworkManager:
             p = f"http://{p}"
         return {"http": p, "https": p}
 
+    @classmethod
+    def _get_cloudscraper(cls):
+        """Devuelve la sesión de cloudscraper del hilo actual, creándola si no existe."""
+        if not hasattr(cls._thread_local, 'scraper'):
+            cls._thread_local.scraper = cloudscraper.create_scraper()
+        return cls._thread_local.scraper
+
     @staticmethod
     def get(url: str, params: dict = None, stream: bool = False, timeout: int = 15, max_retries: int = 3) -> Optional[requests.Response]:
         for attempt in range(max_retries):
@@ -60,7 +69,7 @@ class NetworkManager:
             
             try:
                 if HAS_CLOUDSCRAPER:
-                    scraper = cloudscraper.create_scraper()
+                    scraper = NetworkManager._get_cloudscraper()
                     res = scraper.get(url, params=params, headers=headers, stream=stream, timeout=timeout, proxies=proxy)
                 else:
                     res = requests.get(url, params=params, headers=headers, stream=stream, timeout=timeout, proxies=proxy, verify=False)
@@ -82,7 +91,7 @@ class NetworkManager:
             
             try:
                 if HAS_CLOUDSCRAPER:
-                    scraper = cloudscraper.create_scraper()
+                    scraper = NetworkManager._get_cloudscraper()
                     res = scraper.post(url, data=data, headers=headers, timeout=timeout, proxies=proxy)
                 else:
                     res = requests.post(url, data=data, headers=headers, timeout=timeout, proxies=proxy, verify=False)

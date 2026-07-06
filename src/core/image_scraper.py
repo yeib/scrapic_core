@@ -1,5 +1,4 @@
 import os
-import requests
 import re
 import time
 import shutil
@@ -35,10 +34,7 @@ class MultiEngineScraper:
 
     def create_concept_dir(self, concept: str) -> str:
         """Crea el directorio destino para las imágenes de un concepto."""
-        concept_dir = os.path.join(self.base_dir, concept.replace(" ", "_"))
-        if not os.path.exists(concept_dir):
-            os.makedirs(concept_dir)
-        return concept_dir
+        return FileUtils.make_concept_dir(self.base_dir, concept)
 
     def _move_and_prefix(self, source_dir: str, dest_dir: str, prefix: str):
         if not os.path.exists(source_dir):
@@ -86,6 +82,7 @@ class MultiEngineScraper:
         crawler = BingImageCrawler(storage={'root_dir': temp_dir}, log_level=60)
         crawler.crawl(keyword=concept, max_num=limit)
         self._move_and_prefix(temp_dir, concept_dir, "bing")
+        self.history.flush()
 
     def scrape_baidu(self, concept: str, concept_dir: str, limit: int = 15):
         """Descarga imágenes usando el motor de Baidu."""
@@ -94,6 +91,7 @@ class MultiEngineScraper:
         crawler = BaiduImageCrawler(storage={'root_dir': temp_dir}, log_level=60)
         crawler.crawl(keyword=concept, max_num=limit)
         self._move_and_prefix(temp_dir, concept_dir, "baidu")
+        self.history.flush()
 
     def scrape_yandex(self, concept: str, concept_dir: str, limit: int = 15):
         """Descarga imágenes desde Yandex haciendo scraping directo del HTML de búsqueda."""
@@ -101,7 +99,10 @@ class MultiEngineScraper:
         try:
             query = urllib.parse.quote(concept)
             url = f"https://yandex.com/images/search?text={query}&family=no"
-            res = requests.get(url, headers=self.headers, timeout=10)
+            res = NetworkManager.get(url, timeout=10)  # Usa anti-bot completo: retry, proxies, backoff
+            if not res:
+                logger.warning(f"No se pudo conectar a Yandex para '{concept}'.")
+                return
             
             encoded_urls = re.findall(r"img_url=([^&]+)", res.text)
             
@@ -122,3 +123,4 @@ class MultiEngineScraper:
                     executor.submit(self._download_image, i + 1, img_url, concept_dir, "yandex")
         except Exception as e:
             logger.error(f"Error en Yandex: {e}")
+
