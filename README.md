@@ -50,7 +50,7 @@ Requiere **Python 3.8 o superior**. Para extraer audio a `.mp3`, requiere tener 
 # Linux/Ubuntu: sudo apt install ffmpeg
 
 # 2. Clonar el repositorio
-git clone https://github.com/tu-usuario/scrapic_core.git
+git clone https://github.com/yeib/scrapic_core.git
 cd scrapic_core
 
 # 3. Crear entorno virtual
@@ -66,7 +66,7 @@ pip install -e .
 
 ## 🎮 Modos de Uso
 
-Scrapic expone su motor a través de dos interfaces limpias: un **CLI (Command Line Interface)** de alto rendimiento y una **Web App** interactiva.
+Scrapic expone su motor a través de dos interfaces limpias: un **CLI (Command Line Interface)** ágil e interactivo y una **Web App** visual.
 
 ### 1. Interfaz de Consola (CLI)
 Diseñado para la terminal. Muestra feedback técnico detallado y logs en tiempo real usando barras de progreso fluidas.
