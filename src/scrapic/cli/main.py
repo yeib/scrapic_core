@@ -21,7 +21,7 @@ def main():
     while True:
         # Header principal dividido para respetar PEP8
         title = "[bold cyan]🤖 Scrapic - Ninja Harvester[/bold cyan]"
-        subtitle = "[italic]Multi-Purpose Scraper OSINT & Dataset Builder[/italic]\n[bold teal]✨ by [link=https://yeib.cl]Yeib[/link] ✨[/bold teal]"
+        subtitle = "[italic]Multi-Purpose Scraper OSINT & Dataset Builder[/italic]\n[bold teal]by [link=https://yeib.cl]Yeib[/link][/bold teal]"
         console.print(Panel.fit(f"{title}\n{subtitle}", border_style="cyan"))
         
         console.print("\n[bold yellow]¿Qué tipo de misión deseas iniciar?[/bold yellow]")

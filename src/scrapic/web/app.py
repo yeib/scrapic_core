@@ -63,7 +63,7 @@ with st.sidebar:
         """
         <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
             <a href="https://yeib.cl" target="_blank" style="font-family: 'Caveat', 'Brush Script MT', 'Comic Sans MS', cursive; font-size: 22px; color: teal; text-decoration: none; font-weight: bold; letter-spacing: 1px;">
-                ✨ by Yeib ✨
+                by Yeib
             </a>
         </div>
         """,
