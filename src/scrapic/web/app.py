@@ -12,6 +12,8 @@ from scrapic.core.utils import setup_logging
 
 setup_logging()
 
+import base64
+
 logo_file = "docs/logo.webp"
 st.set_page_config(page_title="Scrapic", page_icon=logo_file if os.path.exists(logo_file) else "🤖", layout="wide")
 
@@ -21,11 +23,19 @@ st.markdown("""
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
+        [data-testid="stSidebarHeader"] {display: none;}
+        [data-testid="stSidebarUserContent"] {padding-top: 1rem;}
     </style>
 """, unsafe_allow_html=True)
 
 st.title("🤖 Scrapic - Ninja Harvester")
 st.markdown("Herramienta multipropósito para recolección de datos masiva desde fuentes abiertas.")
+
+def get_base64_image(image_path: str):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
 
 def get_subdirs(base_path: str):
     if not os.path.exists(base_path):
@@ -42,16 +52,24 @@ def format_size_mb(filepath: str) -> str:
         return "N/A"
 
 with st.sidebar:
-    if os.path.exists(logo_file):
-        col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
-        with col_l2:
-            st.image(logo_file, use_container_width=True)
-        st.markdown("<h2 style='text-align: center; margin-top: -12px; margin-bottom: 2px; color: #00bcd4;'>Scrapic</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; font-size: 12px; color: #888; margin-bottom: 15px;'>Ninja Harvester</p>", unsafe_allow_html=True)
+    logo_b64 = get_base64_image(logo_file)
+    if logo_b64:
+        st.markdown(
+            f"""
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <img src="data:image/webp;base64,{logo_b64}" width="42" height="42" style="border-radius: 8px; flex-shrink: 0;" />
+                <div>
+                    <h3 style="margin: 0; padding: 0; font-size: 20px; font-weight: 800; color: #00bcd4; line-height: 1.1;">Scrapic</h3>
+                    <span style="font-size: 11px; color: #888; letter-spacing: 0.5px; text-transform: uppercase;">Ninja Harvester</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     else:
         st.header("🤖 Scrapic")
     
-    modo = st.radio("Modo de Misión", options=["🖼️ Imágenes", "📊 Dataset Builder", "🕸️ Spider Crawler", "📂 Biblioteca & Descargas"])
+    modo = st.selectbox("🎯 Modo de Misión", options=["🖼️ Imágenes", "📊 Dataset Builder", "🕸️ Spider Crawler", "📂 Biblioteca & Descargas"])
     
     start_btn = False
     
