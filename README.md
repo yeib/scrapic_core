@@ -1,10 +1,13 @@
-# 🤖 Scrapic
+<div align="center">
+  <img src="docs/logo.webp" alt="Scrapic Logo" width="230"/>
+  <h1>Scrapic</h1>
+  <p><strong>OSINT Ninja Harvester & Dataset Builder</strong></p>
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python)
-![CI](https://github.com/yeib/scrapic_core/actions/workflows/ci.yml/badge.svg)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-4.x-green?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Stable-success?style=for-the-badge)
+  ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python)
+  ![CI](https://github.com/yeib/scrapic_core/actions/workflows/ci.yml/badge.svg)
+  ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+  ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+</div>
 
 **Scrapic** es un **Framework de Scraping** diseñado específicamente para la recolección masiva de datos en investigaciones de OSINT, análisis de datasets y creación de corpus para entrenar modelos de Machine Learning (ML).
 

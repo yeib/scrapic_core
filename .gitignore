@@ -20,6 +20,7 @@ scrapic.db
 
 # Archivos privados
 ROADMAP.md
+AUDITORIA.md
 proxies.txt
 
 # Scripts de testing/experimentos sueltos en la raíz

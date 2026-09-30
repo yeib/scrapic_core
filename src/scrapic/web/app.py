@@ -12,7 +12,8 @@ from scrapic.core.utils import setup_logging
 
 setup_logging()
 
-st.set_page_config(page_title="Scrapic", page_icon="🤖", layout="wide")
+logo_file = "docs/logo.webp"
+st.set_page_config(page_title="Scrapic", page_icon=logo_file if os.path.exists(logo_file) else "🤖", layout="wide")
 
 st.markdown("""
     <style>
@@ -41,7 +42,14 @@ def format_size_mb(filepath: str) -> str:
         return "N/A"
 
 with st.sidebar:
-    st.header("⚙️ Configuración")
+    if os.path.exists(logo_file):
+        col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+        with col_l2:
+            st.image(logo_file, use_container_width=True)
+        st.markdown("<h2 style='text-align: center; margin-top: -12px; margin-bottom: 2px; color: #00bcd4;'>Scrapic</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-size: 12px; color: #888; margin-bottom: 15px;'>Ninja Harvester</p>", unsafe_allow_html=True)
+    else:
+        st.header("🤖 Scrapic")
     
     modo = st.radio("Modo de Misión", options=["🖼️ Imágenes", "📊 Dataset Builder", "🕸️ Spider Crawler", "📂 Biblioteca & Descargas"])
     
@@ -49,10 +57,10 @@ with st.sidebar:
     
     if modo == "🖼️ Imágenes":
         concepts_input = st.text_input("Conceptos (separados por coma)", placeholder="ej: Cyberpunk")
-        st.subheader("Motores de búsqueda")
-        use_bing = st.checkbox("Bing", value=True)
-        use_baidu = st.checkbox("Baidu", value=True)
-        use_yandex = st.checkbox("Yandex", value=True)
+        with st.expander("🔍 Motores de búsqueda (3 activos)", expanded=False):
+            use_bing = st.checkbox("Bing", value=True)
+            use_baidu = st.checkbox("Baidu", value=True)
+            use_yandex = st.checkbox("Yandex", value=True)
         limit = st.slider("Cantidad de imágenes por motor", min_value=1, max_value=50, value=10)
         start_btn = st.button("🚀 Iniciar Extracción", type="primary", use_container_width=True)
         
@@ -77,11 +85,10 @@ with st.sidebar:
         limit = st.slider("Límite total de archivos a extraer", min_value=1, max_value=100, value=20)
         start_btn = st.button("🚀 Iniciar Extracción", type="primary", use_container_width=True)
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown(
         """
-        <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <a href="https://yeib.cl" target="_blank" style="font-family: 'Caveat', 'Brush Script MT', 'Comic Sans MS', cursive; font-size: 22px; color: teal; text-decoration: none; font-weight: bold; letter-spacing: 1px;">
+        <div style="text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="https://yeib.cl" target="_blank" style="font-family: 'Caveat', 'Brush Script MT', 'Comic Sans MS', cursive; font-size: 20px; color: teal; text-decoration: none; font-weight: bold; letter-spacing: 1px;">
                 by Yeib
             </a>
         </div>
