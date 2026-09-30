@@ -2,8 +2,8 @@ import os
 import threading
 import sqlite3
 import pytest
-from src.core.report import OSINTReporter
-from src.core.database import DatabaseManager
+from scrapic.core.report import OSINTReporter
+from scrapic.core.database import DatabaseManager
 
 @pytest.fixture(autouse=True)
 def reset_db_singleton():
@@ -36,7 +36,9 @@ def test_log_download_writes_row(reporter, tmp_path):
     fake_file = tmp_path / "imagen_001.jpg"
     fake_file.write_bytes(b"x" * (100 * 1024))  # 100 KB
 
-    reporter.log_download(str(fake_file), "https://fuente.com/img.jpg", "Image Scraper (bing)")
+    assert reporter.log_download(
+        str(fake_file), "https://fuente.com/img.jpg", "Image Scraper (bing)"
+    ) is True
 
     conn = sqlite3.connect(reporter.report_file)
     cur = conn.execute("SELECT * FROM downloads")
@@ -48,6 +50,19 @@ def test_log_download_writes_row(reporter, tmp_path):
     assert row[1] == "https://fuente.com/img.jpg" # url
     assert row[3] == "Image Scraper (bing)" # source
     assert float(row[4]) > 0 # size_mb
+def test_log_download_returns_false_when_database_fails(reporter, monkeypatch):
+    monkeypatch.setattr(reporter.db, "log_download", lambda **kwargs: False)
+
+    assert reporter.log_download("/missing.pdf", "https://example.org/file.pdf", "Spider") is False
+
+
+def test_database_log_download_returns_false_on_sqlite_error(reporter, monkeypatch):
+    def fail_connection():
+        raise sqlite3.OperationalError("database unavailable")
+
+    monkeypatch.setattr(reporter.db, "_get_conn", fail_connection)
+
+    assert reporter.db.log_download("https://example.org/file.pdf", "/file.pdf", "Spider", 1.0) is False
 
 def test_log_download_nonexistent_file(reporter):
     """log_download() no falla si el archivo no existe — registra tamaño 0."""

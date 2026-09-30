@@ -5,10 +5,10 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
-from src.core.history import HistoryManager
-from src.core.network import NetworkManager
-from src.core.utils import FileUtils
-from src.core.report import OSINTReporter
+from scrapic.core.history import HistoryManager
+from scrapic.core.network import NetworkManager
+from scrapic.core.utils import FileUtils, MAX_DOWNLOAD_BYTES
+from scrapic.core.report import OSINTReporter
 
 logger = logging.getLogger("scrapic")
 
@@ -27,7 +27,7 @@ class DatasetScraper:
         base = "downloads/audio" if file_ext == '.mp3' else "downloads/documentos"
         return FileUtils.make_concept_dir(base, concept)
 
-    def _download_file(self, idx: int, url: str, save_dir: str, file_ext: str, min_size_mb: float, min_pages: int, successes: list, limit: int, lock: threading.Lock) -> bool:
+    def _download_file(self, idx: int, url: str, save_dir: str, file_ext: str, min_size_mb: float, min_pages: int, successes: list, limit: int, lock: threading.Lock, max_bytes: int = MAX_DOWNLOAD_BYTES) -> bool:
         """
         Descarga un archivo, lo guarda temporalmente y aplica filtros inteligentes (tamaño, páginas, formato).
         Si falla algún filtro, el archivo es eliminado automáticamente.
@@ -39,12 +39,22 @@ class DatasetScraper:
         try:
             # Fase 1: Headers y descarga temprana
             response = NetworkManager.get(url, stream=True, timeout=20)
-            if not response: return False
+            if not response:
+                return False
+            if not response.ok:
+                response.close()
+                return False
 
             # Validar tamaño desde headers si está disponible (ahorra ancho de banda)
             content_length = response.headers.get('Content-Length')
             if content_length and min_size_mb > 0:
-                if (int(content_length) / (1024 * 1024)) < min_size_mb:
+                try:
+                    declared_size_mb = int(content_length) / (1024 * 1024)
+                except ValueError:
+                    response.close()
+                    return False
+                if declared_size_mb < min_size_mb:
+                    response.close()
                     return False
 
             raw_name = url.split('/')[-1].split('?')[0]
@@ -55,9 +65,7 @@ class DatasetScraper:
             filepath = os.path.join(save_dir, f"{idx:03d}_{clean_name}")
             
             # Fase 2: Escritura a disco
-            with open(filepath, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+            FileUtils.save_response(response, filepath, max_bytes=max_bytes)
             
             with lock:
                 if len(successes) >= limit:
@@ -80,9 +88,13 @@ class DatasetScraper:
             # Éxito: Todas las validaciones pasadas
             with lock:
                 if len(successes) < limit:
+                    if not self.reporter.log_download(filepath, url, f"Dataset ({file_ext})"):
+                        logger.error("Descarga guardada, pero no se persistió el reporte para %s.", url)
+                        return False
+                    if not self.history.mark_as_downloaded(url):
+                        logger.error("Descarga guardada, pero no se persistió el historial para %s.", url)
+                        return False
                     successes.append(url)
-                    self.history.mark_as_downloaded(url)
-                    self.reporter.log_download(filepath, url, f"Dataset ({file_ext})")
                     return True
                 else:
                     if os.path.exists(filepath): os.remove(filepath)
@@ -141,12 +153,14 @@ class DatasetScraper:
                     try:
                         logger.debug(f"Ripper descargando: {entry.get('title', url)}")
                         ydl.download([url])
-                        self.history.mark_as_downloaded(url)
-                        
-                        # Loggear en reporte
                         title = entry.get('title', 'audio_desconocido')
                         file_guess = os.path.join(concept_dir, f"{title}.mp3")
-                        self.reporter.log_download(file_guess, url, "Media Ripper")
+                        if not self.reporter.log_download(file_guess, url, "Media Ripper"):
+                            logger.error("Audio descargado, pero no se persistió el reporte para %s.", url)
+                            continue
+                        if not self.history.mark_as_downloaded(url):
+                            logger.error("Audio descargado, pero no se persistió el historial para %s.", url)
+                            continue
                         
                         successes += 1
                     except Exception as e:
@@ -162,7 +176,7 @@ class DatasetScraper:
                 logger.error(f"Error en Media Ripper: {e}")
             return 0
 
-    def scrape_dataset(self, concept: str, file_ext: str = '.pdf', limit: int = 5, min_size_mb: float = 0, min_pages: int = 0, max_duration_mins: int = 15) -> int:
+    def scrape_dataset(self, concept: str, file_ext: str = '.pdf', limit: int = 5, min_size_mb: float = 0, min_pages: int = 0, max_duration_mins: int = 15, max_bytes: int = MAX_DOWNLOAD_BYTES) -> int:
         """
         Busca y descarga archivos masivamente desde internet usando Yahoo Search (OSINT dorking).
         
@@ -218,7 +232,7 @@ class DatasetScraper:
                     logger.info(f"Página {page+1}: Probando {len(file_links)} enlaces con los filtros...")
                     with ThreadPoolExecutor(max_workers=3) as executor:
                         for idx, file_url in enumerate(file_links):
-                            executor.submit(self._download_file, len(successes) + idx + 1, file_url, concept_dir, file_ext, min_size_mb, min_pages, successes, limit, lock)
+                            executor.submit(self._download_file, len(successes) + idx + 1, file_url, concept_dir, file_ext, min_size_mb, min_pages, successes, limit, lock, max_bytes)
                 
                 if len(successes) >= limit:
                     break

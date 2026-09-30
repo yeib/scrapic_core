@@ -1,6 +1,7 @@
 # 🤖 Scrapic
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python)
+![CI](https://github.com/yeib/scrapic_core/actions/workflows/ci.yml/badge.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-4.x-green?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Stable-success?style=for-the-badge)
@@ -41,7 +42,7 @@ El motor de Scrapic está dividido en módulos independientes (`core`, `cli`, `w
 
 ## 📦 Instalación
 
-Requiere **Python 3.8 o superior**. Para extraer audio a `.mp3`, requiere tener **FFmpeg** instalado en el sistema.
+Requiere **Python 3.9 o superior**. Para extraer audio a `.mp3`, requiere tener **FFmpeg** instalado en el sistema.
 
 ```bash
 # 1. Instalar FFmpeg (Requerido solo para el Media Ripper / MP3)
@@ -62,6 +63,15 @@ source venv/bin/activate  # En Linux/Mac
 pip install -e .
 ```
 
+Para instalar las dependencias de desarrollo y ejecutar las pruebas:
+
+```bash
+pip install -e ".[dev]"
+pytest -q
+```
+
+La integración continua prueba Python 3.9–3.12 en cada push y pull request dirigido a `main`.
+
 ---
 
 ## 🎮 Modos de Uso
@@ -72,7 +82,7 @@ Scrapic expone su motor a través de dos interfaces limpias: un **CLI (Command L
 Diseñado para la terminal. Muestra feedback técnico detallado y logs en tiempo real usando barras de progreso fluidas.
 
 ```bash
-python src/cli/main.py
+scrapic
 ```
 > El menú interactivo te permitirá iniciar Misiones: **Buscador de Imágenes**, **Dataset Builder**, o soltar la **Araña (Spider)** en un dominio.
 
@@ -80,7 +90,7 @@ python src/cli/main.py
 Ideal para visualizar galerías de imágenes extraídas al instante o configurar los filtros del dataset con controles deslizables.
 
 ```bash
-streamlit run src/web/app.py
+streamlit run src/scrapic/web/app.py
 ```
 > Abrirá automáticamente una interfaz en tu navegador web (por defecto en `http://localhost:8501`).
 
@@ -91,7 +101,7 @@ streamlit run src/web/app.py
 - **Núcleo de Scraping**: `requests`, `beautifulsoup4`, `icrawler`
 - **Búsqueda OSINT**: `Yahoo Search` (dorking `filetype:` paginado)
 - **Media Ripper (MP3)**: `yt-dlp` + `FFmpeg`
-- **Análisis y Validación de Datos**: `PyPDF2`, librerías nativas (`csv`, `json`)
+- **Análisis y Validación de Datos**: `pypdf`, librerías nativas (`csv`, `json`)
 - **Presentación Visual**: `rich` (CLI), `streamlit` (Web)
 
 ---

@@ -1,8 +1,9 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import requests
+import socket
 
-from src.core.network import NetworkManager
+from scrapic.core.network import NetworkManager
 
 
 def _make_mock_response(status_code=200):
@@ -22,17 +23,51 @@ class TestNetworkManagerGet:
 
         with patch("requests.get", return_value=mock_resp):
             # Forzar que no use cloudscraper para el mock
-            with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+            with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
                 result = NetworkManager.get("https://ejemplo.com")
 
         assert result is not None
         assert result.status_code == 200
 
+    @pytest.mark.parametrize(
+        "url, resolved_ip",
+        [
+            ("http://127.0.0.1/", "127.0.0.1"),
+            ("http://localhost/", "127.0.0.1"),
+            ("http://10.0.0.1/", "10.0.0.1"),
+            ("http://169.254.169.254/", "169.254.169.254"),
+        ],
+    )
+    def test_is_safe_url_rejects_private_destinations(self, url, resolved_ip):
+        address = (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", (resolved_ip, 80))
+        with patch("scrapic.core.network.socket.getaddrinfo", return_value=[address]):
+            assert NetworkManager.is_safe_url(url) is False
+
+    @pytest.mark.parametrize("url", ["file:///etc/passwd", "ftp://example.org/file"])
+    def test_is_safe_url_rejects_non_http_schemes(self, url):
+        with patch("scrapic.core.network.socket.getaddrinfo") as resolver:
+            assert NetworkManager.is_safe_url(url) is False
+        resolver.assert_not_called()
+
+    def test_is_safe_url_accepts_public_destination(self):
+        address = (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", ("8.8.8.8", 443))
+        with patch("scrapic.core.network.socket.getaddrinfo", return_value=[address]):
+            assert NetworkManager.is_safe_url("https://example.org/") is True
+
+    def test_get_does_not_disable_tls_verification(self):
+        mock_resp = _make_mock_response(200)
+
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
+            with patch("requests.get", return_value=mock_resp) as mock_get:
+                NetworkManager.get("https://ejemplo.com")
+
+        assert mock_get.call_args.kwargs.get("verify", True) is True
+
     def test_get_retries_on_connection_error(self):
         """GET reintenta automáticamente si hay error de conexión."""
         mock_resp = _make_mock_response(200)
 
-        with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
             with patch("requests.get", side_effect=[
                 requests.exceptions.ConnectionError("Sin conexión"),
                 mock_resp,  # 2do intento: éxito
@@ -45,7 +80,7 @@ class TestNetworkManagerGet:
 
     def test_get_returns_none_after_all_retries_exhausted(self):
         """GET devuelve None si todos los reintentos fallan."""
-        with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
             with patch("requests.get", side_effect=requests.exceptions.ConnectionError("Timeout")):
                 with patch("time.sleep"):
                     result = NetworkManager.get("https://ejemplo.com", max_retries=3)
@@ -57,7 +92,7 @@ class TestNetworkManagerGet:
         mock_blocked = _make_mock_response(429)
         mock_ok = _make_mock_response(200)
 
-        with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
             with patch("requests.get", side_effect=[mock_blocked, mock_ok]):
                 with patch("time.sleep"):
                     result = NetworkManager.get("https://ejemplo.com", max_retries=3)
@@ -74,7 +109,7 @@ class TestNetworkManagerGet:
             captured_headers.append(kwargs.get("headers", {}).get("User-Agent", ""))
             return mock_resp
 
-        with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
             with patch("requests.get", side_effect=capture_call):
                 NetworkManager.get("https://ejemplo.com")
 
@@ -88,16 +123,25 @@ class TestNetworkManagerPost:
         """POST exitoso devuelve el objeto Response."""
         mock_resp = _make_mock_response(200)
 
-        with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
             with patch("requests.post", return_value=mock_resp):
                 result = NetworkManager.post("https://ejemplo.com", data={"key": "value"})
 
         assert result is not None
         assert result.status_code == 200
 
+    def test_post_does_not_disable_tls_verification(self):
+        mock_resp = _make_mock_response(200)
+
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
+            with patch("requests.post", return_value=mock_resp) as mock_post:
+                NetworkManager.post("https://ejemplo.com", data={})
+
+        assert mock_post.call_args.kwargs.get("verify", True) is True
+
     def test_post_returns_none_on_failure(self):
         """POST devuelve None si todos los reintentos fallan."""
-        with patch("src.core.network.HAS_CLOUDSCRAPER", False):
+        with patch("scrapic.core.network.HAS_CLOUDSCRAPER", False):
             with patch("requests.post", side_effect=requests.exceptions.Timeout("Timeout")):
                 with patch("time.sleep"):
                     result = NetworkManager.post("https://ejemplo.com", data={}, max_retries=2)

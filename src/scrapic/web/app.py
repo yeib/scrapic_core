@@ -1,14 +1,12 @@
 import streamlit as st
 import os
-import sys
 import glob
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
-from src.core.image_scraper import MultiEngineScraper
-from src.core.dataset_scraper import DatasetScraper
-from src.core.spider import SpiderScraper
-from src.core.utils import setup_logging
+from scrapic.core.image_scraper import MultiEngineScraper
+from scrapic.core.dataset_scraper import DatasetScraper
+from scrapic.core.spider import SpiderScraper
+from scrapic.core.network import NetworkManager
+from scrapic.core.utils import setup_logging
 
 setup_logging()
 
@@ -152,8 +150,8 @@ if start_btn:
             st.balloons()
 
     elif modo == "🕸️ Spider Crawler":
-        if not start_url.startswith("http"):
-            st.error("La URL debe empezar con http:// o https://")
+        if not NetworkManager.is_safe_url(start_url):
+            st.error("La URL debe ser HTTP(S) y resolver únicamente a direcciones IP públicas.")
         else:
             exts = [e.strip() if e.strip().startswith('.') else f".{e.strip()}" for e in target_exts.split(",")]
             spider = SpiderScraper()

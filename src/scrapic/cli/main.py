@@ -1,18 +1,13 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt, IntPrompt
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from rich.table import Table
 
-from src.core.image_scraper import MultiEngineScraper
-from src.core.dataset_scraper import DatasetScraper
-from src.core.spider import SpiderScraper
-from src.core.utils import setup_logging
+from scrapic.core.image_scraper import MultiEngineScraper
+from scrapic.core.dataset_scraper import DatasetScraper
+from scrapic.core.spider import SpiderScraper
+from scrapic.core.utils import setup_logging
 
 console = Console()
 

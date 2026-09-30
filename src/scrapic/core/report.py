@@ -1,6 +1,6 @@
 import os
 import logging
-from src.core.database import DatabaseManager
+from scrapic.core.database import DatabaseManager
 
 logger = logging.getLogger("scrapic")
 
@@ -12,13 +12,17 @@ class OSINTReporter:
         self.report_file = report_file # Mantenemos el atributo por compatibilidad
         self.db = DatabaseManager(db_path=report_file)
         
-    def log_download(self, filepath: str, url: str, source: str):
-        """Registra una descarga exitosa en la BD de forma segura (Thread-safe)."""
+    def log_download(self, filepath: str, url: str, source: str) -> bool:
+        """Registra una descarga y devuelve si se persistió correctamente."""
         try:
             size_mb = 0.0
             if os.path.exists(filepath):
                 size_mb = os.path.getsize(filepath) / (1024 * 1024)
             
-            self.db.log_download(url=url, filepath=filepath, source=source, size_mb=size_mb)
+            persisted = self.db.log_download(url=url, filepath=filepath, source=source, size_mb=size_mb)
+            if not persisted:
+                logger.error("No se pudo persistir el reporte de descarga para %s", url)
+            return persisted
         except Exception as e:
-            logger.debug(f"Error guardando en reporte DB: {e}")
+            logger.error(f"Error guardando en reporte DB: {e}")
+            return False

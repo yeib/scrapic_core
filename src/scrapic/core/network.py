@@ -4,6 +4,9 @@ import requests
 import os
 import logging
 import threading
+import socket
+import ipaddress
+import urllib.parse
 from typing import Optional
 
 logger = logging.getLogger("scrapic")
@@ -28,6 +31,36 @@ class NetworkManager:
     _proxies_list = []
     _proxies_loaded = False
     _thread_local = threading.local()  # Sesión de cloudscraper reutilizable por hilo
+
+    @staticmethod
+    def is_safe_url(url: str) -> bool:
+        """Reject URLs whose resolved addresses are not public HTTP(S) destinations."""
+        try:
+            parsed = urllib.parse.urlsplit(url)
+            if parsed.scheme.lower() not in {"http", "https"} or not parsed.hostname:
+                return False
+            if parsed.username is not None or parsed.password is not None:
+                return False
+            port = parsed.port or (443 if parsed.scheme.lower() == "https" else 80)
+            addresses = socket.getaddrinfo(parsed.hostname, port, type=socket.SOCK_STREAM)
+            if not addresses:
+                return False
+
+            for address in addresses:
+                ip = ipaddress.ip_address(address[4][0].split("%", 1)[0])
+                if (
+                    ip.is_private
+                    or ip.is_loopback
+                    or ip.is_link_local
+                    or ip.is_reserved
+                    or ip.is_multicast
+                    or ip.is_unspecified
+                    or not ip.is_global
+                ):
+                    return False
+            return True
+        except (ValueError, OSError, socket.gaierror):
+            return False
     
     @classmethod
     def _load_proxies(cls):
@@ -62,7 +95,7 @@ class NetworkManager:
         return cls._thread_local.scraper
 
     @staticmethod
-    def get(url: str, params: dict = None, stream: bool = False, timeout: int = 15, max_retries: int = 3) -> Optional[requests.Response]:
+    def get(url: str, params: dict = None, stream: bool = False, timeout: int = 15, max_retries: int = 3, allow_redirects: bool = True) -> Optional[requests.Response]:
         for attempt in range(max_retries):
             headers = {"User-Agent": random.choice(USER_AGENTS)}
             proxy = NetworkManager._get_random_proxy()
@@ -70,9 +103,9 @@ class NetworkManager:
             try:
                 if HAS_CLOUDSCRAPER:
                     scraper = NetworkManager._get_cloudscraper()
-                    res = scraper.get(url, params=params, headers=headers, stream=stream, timeout=timeout, proxies=proxy)
+                    res = scraper.get(url, params=params, headers=headers, stream=stream, timeout=timeout, proxies=proxy, allow_redirects=allow_redirects)
                 else:
-                    res = requests.get(url, params=params, headers=headers, stream=stream, timeout=timeout, proxies=proxy, verify=False)
+                    res = requests.get(url, params=params, headers=headers, stream=stream, timeout=timeout, proxies=proxy, allow_redirects=allow_redirects)
                     
                 if res.status_code in [429, 403, 503, 401]:
                     raise requests.exceptions.RequestException(f"Bloqueo (Status {res.status_code})")
@@ -94,7 +127,7 @@ class NetworkManager:
                     scraper = NetworkManager._get_cloudscraper()
                     res = scraper.post(url, data=data, headers=headers, timeout=timeout, proxies=proxy)
                 else:
-                    res = requests.post(url, data=data, headers=headers, timeout=timeout, proxies=proxy, verify=False)
+                    res = requests.post(url, data=data, headers=headers, timeout=timeout, proxies=proxy)
                     
                 if res.status_code in [429, 403, 503, 401]:
                     raise requests.exceptions.RequestException(f"Bloqueo (Status {res.status_code})")

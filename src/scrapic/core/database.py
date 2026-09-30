@@ -44,17 +44,25 @@ class DatabaseManager:
                 logger.error(f"Error inicializando base de datos SQLite: {e}")
 
     # --- OSINT Reporter Methods ---
-    def log_download(self, url: str, filepath: str, source: str, size_mb: float):
-        conn = self._get_conn()
+    def log_download(self, url: str, filepath: str, source: str, size_mb: float) -> bool:
+        conn = None
         try:
+            conn = self._get_conn()
             with self._lock:
                 conn.execute('''
                     INSERT INTO downloads (url, filepath, source, size_mb)
                     VALUES (?, ?, ?, ?)
                 ''', (url, filepath, source, size_mb))
                 conn.commit()
+            return True
         except sqlite3.Error as e:
             logger.error(f"Error registrando descarga en DB: {e}")
+            if conn is not None:
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    logger.exception("Error revirtiendo transacción de reporte")
+            return False
             
     def get_all_downloads(self) -> List[Dict]:
         conn = self._get_conn()
@@ -67,11 +75,19 @@ class DatabaseManager:
         cur = conn.execute("SELECT 1 FROM history WHERE url = ?", (url,))
         return cur.fetchone() is not None
 
-    def mark_as_downloaded(self, url: str):
-        conn = self._get_conn()
+    def mark_as_downloaded(self, url: str) -> bool:
+        conn = None
         try:
+            conn = self._get_conn()
             with self._lock:
                 conn.execute("INSERT OR IGNORE INTO history (url) VALUES (?)", (url,))
                 conn.commit()
+            return True
         except sqlite3.Error as e:
             logger.error(f"Error guardando historial en DB: {e}")
+            if conn is not None:
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    logger.exception("Error revirtiendo transacción del historial")
+            return False

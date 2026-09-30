@@ -8,10 +8,10 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 from typing import List, Tuple
 
-from src.core.network import NetworkManager
-from src.core.utils import FileUtils
-from src.core.history import HistoryManager
-from src.core.report import OSINTReporter
+from scrapic.core.network import NetworkManager
+from scrapic.core.utils import FileUtils, MAX_DOWNLOAD_BYTES
+from scrapic.core.history import HistoryManager
+from scrapic.core.report import OSINTReporter
 
 logger = logging.getLogger("scrapic")
 
@@ -28,16 +28,24 @@ class SpiderScraper:
         """Retorna (páginas_internas, archivos_objetivo)"""
         pages = []
         files = []
-        res = NetworkManager.get(url, timeout=10)
+        if not NetworkManager.is_safe_url(url):
+            return pages, files
+        res = NetworkManager.get(url, timeout=10, allow_redirects=False)
         if not res:
             return pages, files
-        
-        soup = BeautifulSoup(res.text, "html.parser")
+        if not res.ok or 300 <= res.status_code < 400:
+            res.close()
+            return pages, files
+        try:
+            soup = BeautifulSoup(res.text, "html.parser")
+        finally:
+            res.close()
         for a in soup.find_all("a", href=True):
             href = urllib.parse.urljoin(url, a['href'])
             parsed = urllib.parse.urlparse(href)
             
-            if not href.startswith("http"): continue
+            if not NetworkManager.is_safe_url(href):
+                continue
             
             ext = os.path.splitext(parsed.path)[1].lower()
             if ext in target_extensions:
@@ -54,7 +62,7 @@ class SpiderScraper:
         """Wrapper de _get_links para uso como callable en ThreadPoolExecutor."""
         return self._get_links(url, base_domain, target_extensions)
 
-    def crawl_and_download(self, start_url: str, target_extensions: List[str] = ['.pdf'], max_depth: int = 2, max_files: int = 20, regex_pattern: str = None):
+    def crawl_and_download(self, start_url: str, target_extensions: List[str] = ['.pdf'], max_depth: int = 2, max_files: int = 20, regex_pattern: str = None, max_bytes: int = MAX_DOWNLOAD_BYTES):
         """
         Realiza un mapeo y extracción completa de un sitio web.
         
@@ -69,6 +77,9 @@ class SpiderScraper:
         Fase 1: Escaneo en anchura (BFS) asíncrono para mapear todos los links internos rápidamente.
         Fase 2: Descarga masiva y concurrente usando ThreadPoolExecutor para mayor velocidad.
         """
+        if not NetworkManager.is_safe_url(start_url):
+            raise ValueError("La URL inicial debe ser HTTP(S) y resolver únicamente a direcciones IP públicas.")
+
         logger.info(f"🕸️ Iniciando Spider en: {start_url} (Profundidad Máxima: {max_depth})")
         parsed_start = urllib.parse.urlparse(start_url)
         base_domain = parsed_start.netloc
@@ -130,24 +141,32 @@ class SpiderScraper:
         def download_worker(idx, url):
             with lock:
                 if len(successes) >= max_files: return False
-                
-            res = NetworkManager.get(url, stream=True)
-            if not res: return False
+            if not NetworkManager.is_safe_url(url):
+                return False
+
+            res = NetworkManager.get(url, stream=True, allow_redirects=False)
+            if not res:
+                return False
+            if not res.ok or 300 <= res.status_code < 400:
+                res.close()
+                return False
             
             raw_name = url.split('/')[-1].split('?')[0]
             clean_name = FileUtils.clean_filename(raw_name)
             filepath = os.path.join(domain_dir, f"{idx:03d}_{clean_name}")
             
             try:
-                with open(filepath, "wb") as f:
-                    for chunk in res.iter_content(8192):
-                        f.write(chunk)
+                FileUtils.save_response(res, filepath, max_bytes=max_bytes)
                         
                 with lock:
                     if len(successes) < max_files:
+                        if not self.reporter.log_download(filepath, url, "Spider"):
+                            logger.error("Archivo descargado, pero no se persistió el reporte para %s.", url)
+                            return False
+                        if not self.history.mark_as_downloaded(url):
+                            logger.error("Archivo descargado, pero no se persistió el historial para %s.", url)
+                            return False
                         successes.append(url)
-                        self.history.mark_as_downloaded(url)
-                        self.reporter.log_download(filepath, url, "Spider")
                         return True
                     else:
                         if os.path.exists(filepath): os.remove(filepath)
@@ -161,4 +180,3 @@ class SpiderScraper:
                 
         logger.info(f"🕸️ Spider finalizó: {len(successes)} archivos extraídos de {base_domain}.")
         self.history.flush()
-

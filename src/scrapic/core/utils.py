@@ -3,8 +3,11 @@ import csv
 import json
 import os
 import logging
+from pathlib import Path
 
 logger = logging.getLogger("scrapic")
+
+MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024
 
 
 def setup_logging(level: int = logging.INFO):
@@ -22,9 +25,19 @@ class FileUtils:
     @staticmethod
     def make_concept_dir(base: str, concept: str) -> str:
         """Crea y retorna el directorio destino para un concepto. Centraliza la lógica compartida entre scrapers."""
-        concept_dir = os.path.join(base, concept.replace(" ", "_"))
-        os.makedirs(concept_dir, exist_ok=True)
-        return concept_dir
+        safe_concept = FileUtils.clean_filename(concept.replace(" ", "_"))
+        if safe_concept in {"", ".", ".."}:
+            raise ValueError("El concepto no produce un nombre de directorio válido.")
+
+        base_path = Path(base).resolve()
+        concept_path = (base_path / safe_concept).resolve()
+        try:
+            concept_path.relative_to(base_path)
+        except ValueError as exc:
+            raise ValueError("El directorio del concepto debe permanecer dentro de la carpeta base.") from exc
+
+        concept_path.mkdir(parents=True, exist_ok=True)
+        return str(concept_path)
 
     @staticmethod
     def clean_filename(filename: str) -> str:
@@ -53,13 +66,47 @@ class FileUtils:
             return False
 
     @staticmethod
-    def validate_pdf(filepath: str, min_pages: int) -> bool:
-        """Filtro Inteligente: Abre el PDF en memoria y cuenta las páginas."""
-        if min_pages <= 0: return True
+    def save_response(response, filepath: str, max_bytes: int = MAX_DOWNLOAD_BYTES) -> int:
+        """Guarda una respuesta por chunks y elimina el archivo si supera el límite."""
+        if max_bytes <= 0:
+            raise ValueError("max_bytes debe ser mayor que cero.")
+
+        content_length = response.headers.get("Content-Length")
+        if content_length is not None:
+            try:
+                declared_size = int(content_length)
+            except (TypeError, ValueError) as exc:
+                response.close()
+                raise ValueError("Content-Length inválido.") from exc
+            if declared_size > max_bytes:
+                response.close()
+                raise ValueError(f"La descarga excede el límite de {max_bytes} bytes.")
+
+        bytes_written = 0
         try:
-            import PyPDF2
+            with open(filepath, "wb") as output:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if not chunk:
+                        continue
+                    bytes_written += len(chunk)
+                    if bytes_written > max_bytes:
+                        raise ValueError(f"La descarga excede el límite de {max_bytes} bytes.")
+                    output.write(chunk)
+            return bytes_written
+        except Exception:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            raise
+        finally:
+            response.close()
+
+    @staticmethod
+    def validate_pdf(filepath: str, min_pages: int = 0) -> bool:
+        """Comprueba que el archivo sea un PDF legible y, opcionalmente, que tenga páginas suficientes."""
+        try:
+            from pypdf import PdfReader
             with open(filepath, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = PdfReader(f)
                 num_pages = len(reader.pages)
                 if num_pages < min_pages:
                     logger.debug(f"PDF inválido: Solo tiene {num_pages} páginas (mínimo {min_pages}).")

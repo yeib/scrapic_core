@@ -2,8 +2,8 @@ import os
 import sqlite3
 import threading
 import pytest
-from src.core.history import HistoryManager
-from src.core.database import DatabaseManager
+from scrapic.core.history import HistoryManager
+from scrapic.core.database import DatabaseManager
 
 @pytest.fixture(autouse=True)
 def reset_db_singleton():
@@ -26,8 +26,23 @@ def test_is_downloaded_false_on_fresh_instance(history):
 def test_mark_and_check(history):
     """Después de marcar una URL, is_downloaded devuelve True."""
     url = "https://ejemplo.com/foto.png"
-    history.mark_as_downloaded(url)
+    assert history.mark_as_downloaded(url) is True
     assert history.is_downloaded(url) is True
+
+
+def test_mark_as_downloaded_returns_false_when_database_fails(history, monkeypatch):
+    monkeypatch.setattr(history.db, "mark_as_downloaded", lambda url: False)
+
+    assert history.mark_as_downloaded("https://example.org/file.pdf") is False
+
+
+def test_database_mark_as_downloaded_returns_false_on_sqlite_error(history, monkeypatch):
+    def fail_connection():
+        raise sqlite3.OperationalError("database unavailable")
+
+    monkeypatch.setattr(history.db, "_get_conn", fail_connection)
+
+    assert history.db.mark_as_downloaded("https://example.org/file.pdf") is False
 
 
 def test_unrelated_url_still_false(history):
