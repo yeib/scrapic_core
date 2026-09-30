@@ -24,4 +24,4 @@ AUDITORIA.md
 proxies.txt
 
 # Scripts de testing/experimentos sueltos en la raíz
-test_*.py
+/test_*.py
