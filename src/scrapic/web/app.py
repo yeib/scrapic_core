@@ -72,7 +72,7 @@ with st.sidebar:
             
     elif modo == "🕸️ Spider Crawler":
         start_url = st.text_input("URL Inicial del sitio web", placeholder="https://ejemplo.com/archivos")
-        target_exts = st.text_input("Extensiones a extraer (ej: .pdf, .mp3, .zip, .csv)", value=".pdf,.csv")
+        target_exts = st.text_input("Extensiones a extraer (ej: .pdf, .mp3, .zip, .csv)", value=".pdf, .csv")
         max_depth = st.slider("Profundidad de navegación (Clicks)", min_value=0, max_value=5, value=2)
         limit = st.slider("Límite total de archivos a extraer", min_value=1, max_value=100, value=20)
         start_btn = st.button("🚀 Iniciar Extracción", type="primary", use_container_width=True)

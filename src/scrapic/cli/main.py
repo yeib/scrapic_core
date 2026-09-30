@@ -149,7 +149,7 @@ def main():
             start_url = Prompt.ask("[bold yellow]Ingresa la URL base a rastrear[/bold yellow] (ej: https://ejemplo.com o 'volver')")
             if start_url.lower() == 'volver': continue
             
-            exts_input = Prompt.ask("[bold yellow]¿Qué extensiones extraer? (ej: .pdf, .csv, .mp3, .zip)[/bold yellow]", default=".pdf,.csv")
+            exts_input = Prompt.ask("[bold yellow]¿Qué extensiones extraer? (ej: .pdf, .csv, .mp3, .zip)[/bold yellow]", default=".pdf, .csv")
             target_exts = [e.strip() if e.strip().startswith('.') else f".{e.strip()}" for e in exts_input.split(",")]
             
             max_depth = IntPrompt.ask("[bold yellow]¿Profundidad máxima de clicks? (Sugerido: 1 o 2)[/bold yellow]", default=2)
